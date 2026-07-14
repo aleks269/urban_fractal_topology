@@ -1,0 +1,101 @@
+subset,slug,name,query,morphotype
+russia,moscow,Moscow,"Moscow, Russia",megacity_polycentric
+russia,saint_petersburg,Saint Petersburg,"Saint Petersburg, Russia",imperial_grid_water
+russia,novosibirsk,Novosibirsk,"Novosibirsk, Russia",siberian_rail_river
+russia,yekaterinburg,Yekaterinburg,"Yekaterinburg, Russia",ural_industrial
+russia,kazan,Kazan,"Kazan, Russia",historic_river_modern
+russia,nizhny_novgorod,Nizhny Novgorod,"Nizhny Novgorod, Russia",confluence_relief_industrial
+russia,chelyabinsk,Chelyabinsk,"Chelyabinsk, Russia",industrial_rail
+russia,samara,Samara,"Samara, Russia",volga_linear_grid
+russia,omsk,Omsk,"Omsk, Russia",siberian_river_rail
+russia,rostov_on_don,Rostov-on-Don,"Rostov-on-Don, Russia",southern_river_port
+russia,ufa,Ufa,"Ufa, Russia",relief_river_fragmented
+russia,krasnoyarsk,Krasnoyarsk,"Krasnoyarsk, Russia",yenisei_mountain_linear
+russia,perm,Perm,"Perm, Russia",kama_industrial_fragmented
+russia,voronezh,Voronezh,"Voronezh, Russia",central_russian_control
+russia,volgograd,Volgograd,"Volgograd, Russia",extreme_linear_volga
+russia,krasnodar,Krasnodar,"Krasnodar, Russia",southern_sprawl
+russia,saratov,Saratov,"Saratov, Russia",volga_relief_linear
+russia,tyumen,Tyumen,"Tyumen, Russia",fast_growth_oil_admin
+russia,tolyatti,Tolyatti,"Tolyatti, Russia",soviet_planned_autograd
+russia,izhevsk,Izhevsk,"Izhevsk, Russia",industrial_soviet
+russia,veliky_novgorod,Veliky Novgorod,"Veliky Novgorod, Russia",ancient_loose_lowrise
+russia,pskov,Pskov,"Pskov, Russia",fortress_border_river
+russia,petrozavodsk,Petrozavodsk,"Petrozavodsk, Russia",northern_lake_linear
+russia,volkhov,Volkhov,"Volkhov, Leningrad Oblast, Russia",small_industrial_river
+russia,vyborg,Vyborg,"Vyborg, Russia",european_fortress_bay
+russia,staraya_russa,Staraya Russa,"Staraya Russa, Russia",small_ancient_lowrise
+russia,gatchina,Gatchina,"Gatchina, Russia",palace_park_suburban
+russia,kronstadt,Kronstadt,"Kronstadt, Saint Petersburg, Russia",island_military_port
+russia,kaliningrad,Kaliningrad,"Kaliningrad, Russia",prussian_soviet_mix
+russia,yaroslavl,Yaroslavl,"Yaroslavl, Russia",historic_volga
+russia,vladimir,Vladimir,"Vladimir, Russia",ancient_soviet_periphery
+russia,suzdal,Suzdal,"Suzdal, Russia",small_historic_low_density
+russia,kostroma,Kostroma,"Kostroma, Russia",historic_regular_volga
+russia,ryazan,Ryazan,"Ryazan, Russia",central_historic
+russia,smolensk,Smolensk,"Smolensk, Russia",fortress_relief
+russia,tula,Tula,"Tula, Russia",historic_industrial
+russia,kaluga,Kaluga,"Kaluga, Russia",historic_science_industrial
+russia,kolomna,Kolomna,"Kolomna, Russia",small_historic_kremlin
+russia,sergiev_posad,Sergiev Posad,"Sergiev Posad, Russia",monastery_city
+russia,yelets,Yelets,"Yelets, Russia",merchant_old_relief
+russia,astrakhan,Astrakhan,"Astrakhan, Russia",delta_water_fragmented
+russia,ulyanovsk,Ulyanovsk,"Ulyanovsk, Russia",volga_high_bank
+russia,rybinsk,Rybinsk,"Rybinsk, Russia",reservoir_historic_industrial
+russia,kirov,Kirov,"Kirov, Russia",northeast_historic_industrial
+russia,cheboksary,Cheboksary,"Cheboksary, Russia",volga_reconstructed_bank
+russia,yoshkar_ola,Yoshkar-Ola,"Yoshkar-Ola, Russia",compact_regional_postmodern
+russia,penza,Penza,"Penza, Russia",central_valley
+russia,syzran,Syzran,"Syzran, Russia",linear_volga_industrial
+russia,dimitrovgrad,Dimitrovgrad,"Dimitrovgrad, Russia",planned_industrial_medium
+russia,naberezhnye_chelny,Naberezhnye Chelny,"Naberezhnye Chelny, Russia",soviet_planned_kamaz
+world,new_york,New York,"New York City, New York, USA",dense_grid_islands
+world,boston,Boston,"Boston, Massachusetts, USA",old_irregular_university_suburban
+world,washington_dc,Washington DC,"Washington, District of Columbia, USA",planned_capital_radial
+world,chicago,Chicago,"Chicago, Illinois, USA",grid_lake_industrial
+world,detroit,Detroit,"Detroit, Michigan, USA",shrinking_city_voids
+world,los_angeles,Los Angeles,"Los Angeles, California, USA",car_sprawl_polycentric
+world,san_francisco,San Francisco Bay Area,"San Francisco, California, USA",bay_relief_polycentric
+world,seattle,Seattle,"Seattle, Washington, USA",water_relief_tech
+world,phoenix,Phoenix,"Phoenix, Arizona, USA",desert_sprawl_grid
+world,las_vegas,Las Vegas,"Las Vegas, Nevada, USA",desert_fast_growth
+world,houston,Houston,"Houston, Texas, USA",car_sprawl_oil
+world,new_orleans,New Orleans,"New Orleans, Louisiana, USA",delta_water_lowland
+world,miami,Miami,"Miami, Florida, USA",coastal_lagoon_islands
+world,toronto,Toronto,"Toronto, Ontario, Canada",north_american_dense_suburban
+world,vancouver,Vancouver,"Vancouver, British Columbia, Canada",water_mountains_compact
+world,mexico_city,Mexico City,"Mexico City, Mexico",highland_megastructure_informal
+world,guadalajara,Guadalajara,"Guadalajara, Mexico",mexican_grid_sprawl
+world,monterrey,Monterrey,"Monterrey, Mexico",industrial_mountain
+world,bogota,Bogota,"Bogota, Colombia",andean_linear_dense
+world,medellin,Medellin,"Medellín, Colombia",valley_slope_urbanization
+world,lima,Lima,"Lima, Peru",desert_coastal_boundary
+world,santiago,Santiago,"Santiago, Chile",andean_basin
+world,buenos_aires,Buenos Aires,"Buenos Aires, Argentina",regular_grid_plain
+world,montevideo,Montevideo,"Montevideo, Uruguay",coastal_compact
+world,sao_paulo,Sao Paulo,"São Paulo, Brazil",huge_heterogeneous
+world,rio_de_janeiro,Rio de Janeiro,"Rio de Janeiro, Brazil",mountains_bays_fragmented
+world,brasilia,Brasilia,"Brasília, Brazil",modernist_planned_capital
+world,belo_horizonte,Belo Horizonte,"Belo Horizonte, Brazil",planned_grid_relief_periphery
+world,recife,Recife,"Recife, Brazil",water_islands_delta
+world,salvador,Salvador,"Salvador, Bahia, Brazil",coastal_relief_historic
+world,london,London,"London, England, United Kingdom",historic_multilayer_polycentric
+world,paris,Paris,"Paris, France",compact_core_banlieue_radial
+world,berlin,Berlin,"Berlin, Germany",polycentric_green_voids
+world,hamburg,Hamburg,"Hamburg, Germany",port_water_canals
+world,ruhrgebiet,Ruhrgebiet,"Ruhr, Germany",polycentric_industrial_region
+world,amsterdam_randstad,Amsterdam Randstad,"Amsterdam, Netherlands",water_lowland_polycentric
+world,copenhagen,Copenhagen,"Copenhagen, Denmark",compact_harbor_green
+world,stockholm,Stockholm,"Stockholm, Sweden",archipelago_island_topology
+world,helsinki,Helsinki,"Helsinki, Finland",northern_coastal_forest_water
+world,oslo,Oslo,"Oslo, Norway",fjord_relief_northern
+world,vienna,Vienna,"Vienna, Austria",imperial_ring_structure
+world,prague,Prague,"Prague, Czechia",relief_river_historic
+world,warsaw,Warsaw,"Warsaw, Poland",reconstruction_socialist_layers
+world,budapest,Budapest,"Budapest, Hungary",danube_relief_contrast
+world,barcelona,Barcelona,"Barcelona, Spain",eixample_grid_compact
+world,madrid,Madrid,"Madrid, Spain",radial_ring_dense
+world,lisbon,Lisbon,"Lisbon, Portugal",relief_estuary_historic
+world,rome,Rome,"Rome, Italy",ancient_multilayer_archaeological_voids
+world,milan,Milan,"Milan, Italy",compact_industrial_financial
+world,venice,Venice,"Venice, Italy",extreme_water_topology
