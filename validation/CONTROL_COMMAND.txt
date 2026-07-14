@@ -1,0 +1,17 @@
+Control run command for UrbanFractal Topology 0.4.1:
+
+python -m urban_fractal.cli \
+  --buildings data/zelenograd/buildings.geojson \
+  --boundary data/zelenograd/boundary.geojson \
+  --out validation-output/zelenograd_25m_v041 \
+  --pixel 25 \
+  --topology \
+  --multifractal \
+  --transport \
+  --transport-max-active-cells 250000 \
+  --min-scaling-points 6 \
+  --scaling-min-m 50 \
+  --scaling-max-m 3200
+
+The control calculation must be rerun after any change to mathematical definitions,
+rasterization, topology, multifractal estimation or transport discretization.

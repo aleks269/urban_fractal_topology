@@ -13,20 +13,28 @@ except ImportError:
 
 
 IMAGE_ORDER = [
+    "analysis_domain_mask.png",
     "building_mask.png",
     "box_count_buildings.png",
     "lacunarity_buildings.png",
     "minkowski_profile.png",
     "betti_profile.png",
     "percolation_profile.png",
+    "transport_potential_open_space_lr_contrast_1000.png",
+    "transport_potential_open_space_tb_contrast_1000.png",
+    "transport_potential_buildings_lr_contrast_1000.png",
+    "transport_potential_buildings_tb_contrast_1000.png",
 ]
 
 CSV_ORDER = [
     "box_counts_buildings.csv",
-    "scaling_window_candidates.csv",
+    "scaling_window_candidates_diagnostic.csv",
     "lacunarity_buildings.csv",
     "topology_minkowski_betti_profile.csv",
-    "multifractal_spectrum.csv",
+    "multifractal_spectrum_buildings.csv",
+    "multifractal_raw_buildings.csv",
+    "height_sensitivity_2_5d.csv",
+    "transport_results.csv",
 ]
 
 
@@ -154,8 +162,13 @@ def make_markdown(results_dir: Path, city: str) -> str:
 
     lines.append("## 4. Interpretation checklist")
     lines.append("")
-    lines.append("- Проверить, что `building_mask.png` похож на реальную застройку, а не на пустой прямоугольник.")
-    lines.append("- Проверить, есть ли устойчивый линейный участок на `box_count_buildings.png`.")
+    lines.append("- Проверить, что `analysis_domain_mask.png` соответствует реальной области анализа, а внешняя часть bounding box исключена.")
+    lines.append("- Проверить, что `building_mask.png` корректно обрезана маской области анализа.")
+    lines.append("- Проверить устойчивость box-counting по `r2`, `grid_offset_cv`, `leave_one_out_cv` и числу масштабов.")
+    lines.append("- Не смешивать `giant_component_radius_m` с направленными spanning-радиусами; для межгородского сравнения использовать поля `*_recommended_m` и учитывать `spanning_reference_recommended`.")
+    lines.append("- Сырые интегральные топологические индексы зависят от числа компонент, характерного размера и диапазона радиусов; для сравнения использовать нормированные индексы и одинаковый интервал радиусов.")
+    lines.append("- Для multifractal учитывать только точки с `fit_pass=true`; различать footprint-area и height-weighted меры.")
+    lines.append("- Для transport проверить энергетическое тождество и фактический `coarsening_factor`.")
     lines.append("- Сравнить результат при `pixel=100`, `50`, `25 м`; сильные скачки означают чувствительность к масштабу.")
     lines.append("- Для научного сравнения фиксировать источник данных, границу города, размер пикселя и диапазон масштабов.")
     lines.append("- Если высоты зданий отсутствуют, 2.5D-показатели являются модельными, а не измеренными.")
@@ -271,8 +284,13 @@ img {
     parts.append("<h2>4. Interpretation checklist</h2>")
     parts.append("""
 <ul>
-<li>Проверить, что <code>building_mask.png</code> похож на реальную застройку, а не на пустой прямоугольник.</li>
-<li>Проверить, есть ли устойчивый линейный участок на <code>box_count_buildings.png</code>.</li>
+<li>Проверить, что <code>analysis_domain_mask.png</code> соответствует реальной области анализа, а внешняя часть bounding box исключена.</li>
+<li>Проверить, что <code>building_mask.png</code> корректно обрезана маской области анализа.</li>
+<li>Проверить устойчивость box-counting по <code>r2</code>, <code>grid_offset_cv</code>, <code>leave_one_out_cv</code> и числу масштабов.</li>
+<li>Не смешивать <code>giant_component_radius_m</code> с направленными spanning-радиусами; для межгородского сравнения использовать поля <code>*_recommended_m</code> и учитывать <code>spanning_reference_recommended</code>.</li>
+<li>Сырые интегральные топологические индексы зависят от числа компонент, характерного размера и диапазона радиусов; для сравнения использовать нормированные индексы и одинаковый интервал радиусов.</li>
+<li>Для multifractal учитывать только точки с <code>fit_pass=true</code>; различать footprint-area и height-weighted меры.</li>
+<li>Для transport проверить энергетическое тождество и фактический <code>coarsening_factor</code>.</li>
 <li>Сравнить результат при <code>pixel=100</code>, <code>50</code>, <code>25 м</code>; сильные скачки означают чувствительность к масштабу.</li>
 <li>Для научного сравнения фиксировать источник данных, границу города, размер пикселя и диапазон масштабов.</li>
 <li>Если высоты зданий отсутствуют, 2.5D-показатели являются модельными, а не измеренными.</li>

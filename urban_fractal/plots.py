@@ -10,10 +10,16 @@ import pandas as pd
 def plot_box_count(counts: pd.DataFrame, fit: dict, path: str | Path) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    x = np.log(1.0 / counts["scale_m"].to_numpy())
-    y = np.log(counts["count"].to_numpy())
+    x = np.log(1.0 / counts["scale_m"].to_numpy(dtype=float))
+    y = np.log(counts["count_fit"].to_numpy(dtype=float))
+    yerr = np.divide(
+        counts["count_std"].to_numpy(dtype=float),
+        counts["count_mean"].to_numpy(dtype=float),
+        out=np.zeros(len(counts)),
+        where=counts["count_mean"].to_numpy(dtype=float) > 0,
+    )
     fig, ax = plt.subplots(figsize=(7, 5))
-    ax.scatter(x, y, label="counts")
+    ax.errorbar(x, y, yerr=yerr, fmt="o", label="multi-origin mean ± relative spread")
     xmin = np.log(1.0 / fit["scale_max"])
     xmax = np.log(1.0 / fit["scale_min"])
     xx = np.linspace(xmin, xmax, 100)
@@ -36,18 +42,26 @@ def plot_lacunarity(lacunarity: pd.DataFrame, pixel_size_m: float, path: str | P
     ax.plot(scale, lacunarity["lacunarity"].to_numpy(), marker="o")
     ax.set_xscale("log")
     ax.set_xlabel("window size, m")
-    ax.set_ylabel("lacunarity")
+    ax.set_ylabel("domain-aware lacunarity")
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
     fig.savefig(path, dpi=200)
     plt.close(fig)
 
 
-def plot_mask(mask, path: str | Path) -> None:
+def plot_mask(mask, path: str | Path, domain_mask=None) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
+    m = np.asarray(mask, dtype=bool)
+    if domain_mask is None:
+        image = m.astype(float)
+    else:
+        domain = np.asarray(domain_mask, dtype=bool)
+        image = np.full(m.shape, np.nan)
+        image[domain] = 0.0
+        image[m & domain] = 1.0
     fig, ax = plt.subplots(figsize=(7, 7))
-    ax.imshow(mask, origin="upper", interpolation="nearest")
+    ax.imshow(image, origin="upper", interpolation="nearest")
     ax.set_axis_off()
     fig.tight_layout()
     fig.savefig(path, dpi=200)
@@ -64,8 +78,8 @@ def plot_minkowski_profile(profile: pd.DataFrame, path: str | Path) -> None:
     ax1.set_ylabel("area A(r), m²")
     ax1.grid(True, alpha=0.3)
     ax2 = ax1.twinx()
-    ax2.plot(x, profile["perimeter_m"].to_numpy(dtype=float), marker="s", label="P(r)")
-    ax2.set_ylabel("lattice perimeter P(r), m")
+    ax2.plot(x, profile["perimeter_m"].to_numpy(dtype=float), marker="s", label="Crofton P(r)")
+    ax2.set_ylabel("Crofton perimeter P(r), m")
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines1 + lines2, labels1 + labels2, loc="best")
@@ -79,9 +93,9 @@ def plot_betti_profile(profile: pd.DataFrame, path: str | Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     x = profile["radius_m"].to_numpy(dtype=float)
     fig, ax = plt.subplots(figsize=(7, 5))
-    ax.plot(x, profile["beta0"].to_numpy(dtype=float), marker="o", label="beta0 components")
-    ax.plot(x, profile["beta1"].to_numpy(dtype=float), marker="s", label="beta1 holes")
-    ax.plot(x, profile["chi"].to_numpy(dtype=float), marker="^", label="chi")
+    ax.plot(x, profile["beta0"].to_numpy(dtype=float), marker="o", label="β0 components")
+    ax.plot(x, profile["beta1"].to_numpy(dtype=float), marker="s", label="β1 holes")
+    ax.plot(x, profile["chi"].to_numpy(dtype=float), marker="^", label="χ")
     ax.set_xlabel("dilation radius r, m")
     ax.set_ylabel("topological count")
     ax.grid(True, alpha=0.3)
@@ -96,52 +110,61 @@ def plot_percolation_profile(profile: pd.DataFrame, path: str | Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     x = profile["radius_m"].to_numpy(dtype=float)
     fig, ax = plt.subplots(figsize=(7, 5))
-    ax.plot(x, profile["giant_fraction"].to_numpy(dtype=float), marker="o")
+    ax.plot(x, profile["giant_fraction"].to_numpy(dtype=float), marker="o", label="largest-component fraction")
+    if "spans_lr" in profile:
+        ax.step(x, profile["spans_lr"].astype(int), where="post", label="left–right spanning")
+    if "spans_tb" in profile:
+        ax.step(x, profile["spans_tb"].astype(int), where="post", label="top–bottom spanning")
     ax.set_xlabel("dilation radius r, m")
-    ax.set_ylabel("largest component fraction G(r)")
+    ax.set_ylabel("fraction / spanning indicator")
     ax.set_ylim(-0.02, 1.02)
     ax.grid(True, alpha=0.3)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
+def plot_transport_potential(potential: np.ndarray, path: str | Path, title: str) -> None:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(7, 6))
+    im = ax.imshow(potential, origin="upper", interpolation="nearest", vmin=0, vmax=1)
+    fig.colorbar(im, ax=ax, label="normalized potential u")
+    ax.set_title(title)
+    ax.set_axis_off()
     fig.tight_layout()
     fig.savefig(path, dpi=200)
     plt.close(fig)
 
 
 def plot_resolution_sweep(summary: pd.DataFrame, path: str | Path) -> None:
-    """Plot key resolution-dependence diagnostics for one-city sweeps."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     if summary.empty or "pixel_size_m" not in summary:
         return
-
     df = summary.copy()
     for col in [
-        "pixel_size_m",
-        "D_build",
-        "D_r2",
-        "raster_area_error_rel",
-        "lacunarity_mean",
-        "rc_m",
+        "pixel_size_m", "D_build", "D_r2", "raster_area_error_rel",
+        "lacunarity_mean", "spanning_radius_any_m", "giant_component_radius_m",
     ]:
         if col in df:
             df[col] = pd.to_numeric(df[col], errors="coerce")
     df = df.sort_values("pixel_size_m")
-
     metrics = [
         ("D_build", "box-counting D"),
         ("raster_area_error_rel", "raster area error"),
         ("lacunarity_mean", "mean lacunarity"),
-        ("rc_m", "percolation radius, m"),
+        ("spanning_radius_any_m", "spanning radius, m"),
+        ("giant_component_radius_m", "giant-component radius, m"),
     ]
-    available = [(col, label) for col, label in metrics if col in df and df[col].notna().any()]
+    available = [(c, label) for c, label in metrics if c in df and df[c].notna().any()]
     if not available:
         return
-
     fig, axes = plt.subplots(len(available), 1, figsize=(7, 3.2 * len(available)), squeeze=False)
-    axes = axes.ravel()
     x = df["pixel_size_m"].to_numpy(dtype=float)
-    for ax, (col, label) in zip(axes, available):
-        y = df[col].to_numpy(dtype=float)
-        ax.plot(x, y, marker="o")
+    for ax, (col, label) in zip(axes.ravel(), available):
+        ax.plot(x, df[col].to_numpy(dtype=float), marker="o")
         ax.set_xscale("log")
         ax.set_xlabel("pixel size, m")
         ax.set_ylabel(label)

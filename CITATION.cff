@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, cite the tagged release and repository."
+title: "UrbanFractal Topology"
+type: software
+authors:
+  - family-names: "Aglikov"
+    given-names: "Aleksandr"
+version: "0.4.1"
+date-released: "2026-07-14"
+repository-code: "https://github.com/aleks269/urban_fractal_topology"
+url: "https://github.com/aleks269/urban_fractal_topology"
+license: MIT
+keywords:
+  - urban morphology
+  - fractal geometry
+  - lacunarity
+  - digital topology
+  - multifractal analysis
+  - OpenStreetMap
+  - finite-volume transport
