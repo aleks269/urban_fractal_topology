@@ -14,21 +14,28 @@ import pandas as pd
 
 
 IMAGE_NAMES = [
+    "analysis_domain_mask.png",
     "building_mask.png",
     "box_count_buildings.png",
     "lacunarity_buildings.png",
     "minkowski_profile.png",
     "betti_profile.png",
     "percolation_profile.png",
+    "transport_potential_open_space_lr_contrast_1000.png",
+    "transport_potential_open_space_tb_contrast_1000.png",
+    "transport_potential_buildings_lr_contrast_1000.png",
+    "transport_potential_buildings_tb_contrast_1000.png",
 ]
 
 CSV_NAMES = [
     "box_counts_buildings.csv",
-    "scaling_window_candidates.csv",
+    "scaling_window_candidates_diagnostic.csv",
     "lacunarity_buildings.csv",
     "topology_minkowski_betti_profile.csv",
     "multifractal_spectrum_buildings.csv",
     "multifractal_raw_buildings.csv",
+    "height_sensitivity_2_5d.csv",
+    "transport_results.csv",
 ]
 
 
@@ -157,12 +164,14 @@ def collect_row(root: Path, result_dir: Path) -> dict:
             "perimeter_m",
         ],
         "compactness_2d": [
+            "planar_boundary.compactness_2d_analysis_boundary",
             "planar_boundary.compactness_2d",
             "compactness_2d",
             "C_2D",
             "compactness",
         ],
         "building_count": [
+            "building_surfaces.n_buildings",
             "building_surfaces.count",
             "count",
             "n_buildings",
@@ -183,21 +192,25 @@ def collect_row(root: Path, result_dir: Path) -> dict:
             "building_surfaces.volume_m3",
         ],
         "known_height_fraction": [
+            "building_surfaces.height_source_known_area_fraction",
             "building_surfaces.height_source_known_fraction",
             "height_source_known_fraction",
         ],
         "surface_amplification": [
+            "derived_2_5d.surface_amplification_thermal_envelope_over_plan",
             "derived_2_5d.surface_amplification_envelope_over_plan",
             "surface_amplification",
             "A_env_over_A0",
             "k_env",
         ],
-        "compactness_3d": [
+        "closed_3d_compactness": [
+            "derived_2_5d.isoperimetric_compactness_3d_closed_surface",
             "derived_2_5d.compactness_3d",
             "C_3D",
             "compactness_3d",
         ],
-        "surface_to_volume_1_per_m": [
+        "thermal_surface_to_volume_1_per_m": [
+            "derived_2_5d.thermal_surface_to_volume_1_per_m",
             "derived_2_5d.surface_to_volume_1_per_m",
         ],
         "lacunarity_min": [
@@ -212,11 +225,24 @@ def collect_row(root: Path, result_dir: Path) -> dict:
         "lacunarity_peak_window_m": [
             "lacunarity_building_footprints.peak_window_m",
         ],
-        "rc_m": [
+        "giant_component_radius_m": [
+            "topological_morphology_building_footprints.giant_component_radius_m",
             "topological_morphology_building_footprints.rc_m",
             "rc_m",
             "percolation_radius",
             "r_c",
+        ],
+        "spanning_radius_lr_m": [
+            "topological_morphology_building_footprints.spanning_radius_lr_m",
+        ],
+        "spanning_radius_tb_m": [
+            "topological_morphology_building_footprints.spanning_radius_tb_m",
+        ],
+        "foreground_fraction_within_domain": [
+            "raster_diagnostics.foreground_fraction_within_domain",
+        ],
+        "domain_fraction_of_bbox": [
+            "raster_diagnostics.domain_fraction_of_bbox",
         ],
         "beta0_at_zero": [
             "topological_morphology_building_footprints.beta0_at_zero",
@@ -246,6 +272,19 @@ def collect_row(root: Path, result_dir: Path) -> dict:
 
     for out_key, names in aliases.items():
         row[out_key] = find_value(flat, names)
+
+    transport = (summary.get("two_phase_transport") or {}).get("results") or []
+    for item in transport:
+        if not isinstance(item, dict):
+            continue
+        phase = str(item.get("phase", "")).strip()
+        direction = str(item.get("direction", "")).strip()
+        if not phase or not direction:
+            continue
+        prefix = f"transport_{phase}_{direction}"
+        row[f"{prefix}_relative_conductance"] = item.get("relative_conductance", "")
+        row[f"{prefix}_resistance"] = item.get("resistance", "")
+        row[f"{prefix}_energy_error"] = item.get("energy_identity_relative_error", "")
 
     return row
 
@@ -371,20 +410,28 @@ def write_global_csv(rows: list[dict], path: Path) -> None:
         "compactness_2d",
         "building_count",
         "known_height_fraction",
+        "foreground_fraction_within_domain",
+        "domain_fraction_of_bbox",
         "surface_amplification",
-        "compactness_3d",
-        "surface_to_volume_1_per_m",
+        "closed_3d_compactness",
+        "thermal_surface_to_volume_1_per_m",
         "lacunarity_min",
         "lacunarity_max",
         "lacunarity_mean",
         "lacunarity_peak_window_m",
-        "rc_m",
+        "giant_component_radius_m",
+        "spanning_radius_lr_m",
+        "spanning_radius_tb_m",
         "beta0_at_zero",
         "beta1_at_zero",
         "beta1_peak_radius_m",
         "archipelago_index",
         "void_index",
         "boundary_complexity_index",
+        "transport_open_space_lr_relative_conductance",
+        "transport_open_space_tb_relative_conductance",
+        "transport_buildings_lr_relative_conductance",
+        "transport_buildings_tb_relative_conductance",
         "report",
         "summary_json",
     ]
@@ -686,7 +733,8 @@ def make_comparison_plots(root: Path, result_dirs: list[Path], rows: list[dict])
         plot_metric_bar(rows, "lacunarity_mean", "Mean lacunarity by city", "Mean lacunarity", plot_dir / "rank_lacunarity_mean.png"),
         plot_metric_bar(rows, "surface_amplification", "Envelope surface amplification", "A_env / A_plan", plot_dir / "rank_surface_amplification.png"),
         plot_metric_bar(rows, "compactness_2d", "2D compactness by city", "4πA / P²", plot_dir / "rank_compactness_2d.png"),
-        plot_metric_bar(rows, "rc_m", "Percolation radius by city", "r_c, m", plot_dir / "rank_percolation_radius.png"),
+        plot_metric_bar(rows, "giant_component_radius_m", "Giant-component radius by city", "r_giant, m", plot_dir / "rank_giant_component_radius.png"),
+        plot_metric_bar(rows, "spanning_radius_lr_m", "Left-right spanning radius by city", "r_span,LR, m", plot_dir / "rank_spanning_radius_lr.png"),
         plot_metric_scatter(
             rows,
             "D_build",
@@ -717,11 +765,11 @@ def make_comparison_plots(root: Path, result_dirs: list[Path], rows: list[dict])
         plot_metric_scatter(
             rows,
             "D_build",
-            "rc_m",
-            "Fractal dimension vs percolation radius",
+            "spanning_radius_lr_m",
+            "Fractal dimension vs left-right spanning radius",
             "D_build",
-            "r_c, m",
-            plot_dir / "scatter_D_vs_rc.png",
+            "r_span,LR, m",
+            plot_dir / "scatter_D_vs_spanning_lr.png",
         ),
         plot_box_count_profiles(
             result_dirs,
@@ -767,7 +815,7 @@ def make_comparison_plots(root: Path, result_dirs: list[Path], rows: list[dict])
             rows_by_dir,
             root,
             "giant_fraction",
-            "Percolation profiles",
+            "Giant-component profiles",
             "Largest component fraction G(r)",
             plot_dir / "profiles_giant_fraction.png",
         ),
@@ -814,9 +862,13 @@ def write_global_html(rows: list[dict], root: Path, plots: list[Path], path: Pat
         "D_r2",
         "compactness_2d",
         "surface_amplification",
-        "compactness_3d",
+        "closed_3d_compactness",
         "lacunarity_mean",
-        "rc_m",
+        "giant_component_radius_m",
+        "spanning_radius_lr_m",
+        "spanning_radius_tb_m",
+        "transport_open_space_lr_relative_conductance",
+        "transport_open_space_tb_relative_conductance",
         "beta0_at_zero",
         "beta1_at_zero",
         "archipelago_index",

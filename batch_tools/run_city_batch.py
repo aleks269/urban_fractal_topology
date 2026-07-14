@@ -11,6 +11,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
 
+from urban_fractal import __version__
+
 
 @dataclass
 class CityRecord:
@@ -70,6 +72,65 @@ def output_dir(results_root: Path, city: CityRecord, mode: str) -> Path:
     return results_root / mode / city.subset / city.slug
 
 
+def result_is_compatible(existing: dict, args: argparse.Namespace) -> bool:
+    """Return True only when an existing result matches the requested method.
+
+    Version equality alone is insufficient: a result made with another pixel
+    size, rasterization rule or disabled transport block must not be silently
+    reused by the fixed 25 m final workflow.
+    """
+    if (existing.get("software") or {}).get("version") != __version__:
+        return False
+    if args.mode == "sweep":
+        rows = existing.get("resolutions") or []
+        got = sorted(float(r.get("pixel_size_m")) for r in rows if isinstance(r, dict) and r.get("pixel_size_m") is not None)
+        want = sorted(float(x) for x in args.resolution_sweep)
+        return len(got) == len(want) and all(abs(a - b) <= 1e-9 for a, b in zip(got, want))
+
+    inp = existing.get("input") or {}
+    try:
+        if abs(float(inp.get("pixel_size_m")) - float(args.pixel)) > 1e-9:
+            return False
+    except (TypeError, ValueError):
+        return False
+    if bool(inp.get("all_touched")) != bool(args.all_touched):
+        return False
+    checks = {
+        "min_scaling_points": int(args.min_scaling_points),
+        "scaling_scale_min_m": float(args.scaling_min_m),
+        "scaling_scale_max_m": float(args.scaling_max_m),
+        "topology_max_radius_fraction": float(args.topology_max_radius_fraction),
+        "topology_n_radii": int(args.topology_n_radii),
+        "topology_connectivity": int(args.topology_connectivity),
+        "giant_threshold": float(args.giant_threshold),
+    }
+    for key, wanted in checks.items():
+        try:
+            if abs(float(inp.get(key)) - float(wanted)) > 1e-12:
+                return False
+        except (TypeError, ValueError):
+            return False
+    if args.mode in {"topology", "final"} and inp.get("topology") is not True:
+        return False
+    if args.mode == "final":
+        if inp.get("multifractal") is not True or inp.get("transport") is not True:
+            return False
+        phases = [x.strip() for x in str(args.transport_phases).split(",") if x.strip()]
+        got_phases = [str(x) for x in (inp.get("transport_phases") or [])]
+        if phases != got_phases:
+            return False
+        wanted_contrasts = [float(x.strip()) for x in str(args.transport_contrasts).split(",") if x.strip()]
+        got_contrasts = [float(x) for x in (inp.get("transport_contrasts") or [])]
+        if len(wanted_contrasts) != len(got_contrasts) or any(abs(a - b) > 1e-12 for a, b in zip(wanted_contrasts, got_contrasts)):
+            return False
+        try:
+            if int(inp.get("transport_max_active_cells")) != int(args.transport_max_active_cells):
+                return False
+        except (TypeError, ValueError):
+            return False
+    return True
+
+
 def build_command(args: argparse.Namespace, city: CityRecord, buildings: Path, boundary: Path, outdir: Path) -> list[str]:
     # Use module invocation so editable installs and local source trees both work.
     cmd = [
@@ -94,6 +155,14 @@ def build_command(args: argparse.Namespace, city: CityRecord, buildings: Path, b
         str(args.max_box_fraction),
         "--min-scaling-points",
         str(args.min_scaling_points),
+        "--scaling-min-m",
+        str(args.scaling_min_m),
+        "--scaling-max-m",
+        str(args.scaling_max_m),
+        "--lacunarity-min-domain-fraction",
+        str(args.lacunarity_min_domain_fraction),
+        "--height-scenarios",
+        args.height_scenarios,
     ]
 
     if args.mode == "quick":
@@ -117,7 +186,7 @@ def build_command(args: argparse.Namespace, city: CityRecord, buildings: Path, b
             str(args.sweep_rc_cv_threshold),
         ]
     elif args.mode == "final":
-        cmd += ["--pixel", str(args.pixel), "--topology", "--multifractal"]
+        cmd += ["--pixel", str(args.pixel), "--topology", "--multifractal", "--transport"]
     else:
         raise ValueError(f"Unknown mode: {args.mode}")
 
@@ -125,7 +194,15 @@ def build_command(args: argparse.Namespace, city: CityRecord, buildings: Path, b
         cmd += ["--multifractal"]
     if args.topology_radii:
         cmd += ["--topology-radii", args.topology_radii]
+    if args.all_touched:
+        cmd += ["--all-touched"]
     cmd += [
+        "--transport-phases",
+        args.transport_phases,
+        "--transport-contrasts",
+        args.transport_contrasts,
+        "--transport-max-active-cells",
+        str(args.transport_max_active_cells),
         "--topology-max-radius-fraction",
         str(args.topology_max_radius_fraction),
         "--topology-n-radii",
@@ -176,12 +253,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--roof-factor", type=float, default=1.0)
     parser.add_argument("--min-box-px", type=int, default=2)
     parser.add_argument("--max-box-fraction", type=float, default=0.25)
-    parser.add_argument("--min-scaling-points", type=int, default=4)
+    parser.add_argument("--min-scaling-points", type=int, default=6)
+    parser.add_argument("--scaling-min-m", type=float, default=50.0)
+    parser.add_argument("--scaling-max-m", type=float, default=3200.0)
+    parser.add_argument("--lacunarity-min-domain-fraction", type=float, default=0.95)
+    parser.add_argument("--height-scenarios", default="9,12,15")
+    parser.add_argument("--transport-phases", default="open_space,buildings")
+    parser.add_argument("--transport-contrasts", default="1000")
+    parser.add_argument("--transport-max-active-cells", type=int, default=250000)
     parser.add_argument("--topology-radii", default=None)
-    parser.add_argument("--topology-max-radius-fraction", type=float, default=0.05)
+    parser.add_argument("--topology-max-radius-fraction", type=float, default=0.25)
     parser.add_argument("--topology-n-radii", type=int, default=18)
     parser.add_argument("--topology-connectivity", type=int, choices=[1, 2], default=1)
     parser.add_argument("--giant-threshold", type=float, default=0.5)
+    parser.add_argument("--all-touched", action="store_true", help="Use any-touch rasterization instead of the default pixel-center rule.")
     parser.add_argument("--python", default=sys.executable)
     parser.add_argument("--skip-existing", action="store_true", help="Skip city if expected summary already exists.")
     parser.add_argument("--continue-on-error", action="store_true", help="Continue if one city fails.")
@@ -228,10 +313,18 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         if args.skip_existing and expected.exists():
-            row["status"] = "skipped_existing"
-            print("SKIP existing:", expected)
-            manifest_rows.append(row)
-            continue
+            compatible = False
+            try:
+                existing = json.loads(expected.read_text(encoding="utf-8"))
+                compatible = result_is_compatible(existing, args)
+            except Exception:
+                compatible = False
+            if compatible:
+                row["status"] = "skipped_existing"
+                print("SKIP compatible existing result:", expected)
+                manifest_rows.append(row)
+                continue
+            print(f"RECALCULATE incompatible result (required method/version {__version__}):", expected)
 
         cmd = build_command(args, city, buildings, boundary, outdir)
         row["command"] = " ".join(shlex.quote(x) for x in cmd)

@@ -13,34 +13,41 @@ __pycache__/
 .mypy_cache/
 .coverage
 htmlcov/
-
 # Virtual environments
 .venv/
 venv/
 env/
-
 # Build and package artifacts
 build/
 dist/
 *.egg-info/
-
 # IDE and notebook state
 .vscode/
 .idea/
 .ipynb_checkpoints/
-
 # Generated calculations and reports
 results/
 reports/
 report_output*/
 slurm-*.out
 slurm-*.err
-
 # Downloaded city datasets (keep small curated examples only)
 data/approved_cities/
-
 # Temporary and backup files
 *.tmp
 *.temp
 *.bak
 *~
+# Build artifacts
+# Runtime results
+output/
+outputs/
+logs/
+slurm_logs/
+scratch/
+tmp/
+# Downloaded city datasets
+# Slurm runtime files
+*.jobid
+# Backups and temporary editor files
+*.orig

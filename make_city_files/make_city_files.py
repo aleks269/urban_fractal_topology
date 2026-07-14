@@ -10,7 +10,7 @@ def save_city(place: str, out_dir: str) -> None:
     out.mkdir(parents=True, exist_ok=True)
 
     print(f"Downloading boundary for: {place}")
-    boundary = ox.geocode_to_gdf(place)
+    boundary = ox.geocoder.geocode_to_gdf(place)
     boundary = boundary[boundary.geometry.notna()].copy()
     boundary = boundary.to_crs(4326)
     boundary.to_file(out / "boundary.geojson", driver="GeoJSON")
@@ -18,7 +18,7 @@ def save_city(place: str, out_dir: str) -> None:
     poly = boundary.geometry.iloc[0]
 
     print("Downloading buildings...")
-    buildings = ox.features_from_polygon(poly, tags={"building": True})
+    buildings = ox.features.features_from_polygon(poly, tags={"building": True})
     buildings = buildings[buildings.geometry.type.isin(["Polygon", "MultiPolygon"])].copy()
     buildings = buildings.to_crs(4326)
 
@@ -41,8 +41,8 @@ def save_city(place: str, out_dir: str) -> None:
 
     print("Downloading roads...")
     try:
-        G = ox.graph_from_polygon(poly, network_type="drive", simplify=True)
-        _, edges = ox.graph_to_gdfs(G)
+        G = ox.graph.graph_from_polygon(poly, network_type="drive", simplify=True)
+        _, edges = ox.convert.graph_to_gdfs(G)
         edges = edges.to_crs(4326)
         edges.to_file(out / "roads.geojson", driver="GeoJSON")
         print(f"Saved roads to {out / 'roads.geojson'}")

@@ -1,0 +1,17 @@
+Control run command:
+
+python -m urban_fractal.cli \
+  --buildings data/zelenograd/buildings.geojson \
+  --boundary data/zelenograd/boundary.geojson \
+  --out validation-output/zelenograd_25m \
+  --pixel 25 \
+  --topology \
+  --multifractal \
+  --transport \
+  --transport-max-active-cells 250000 \
+  --min-scaling-points 6 \
+  --scaling-min-m 50 \
+  --scaling-max-m 3200
+
+Observed wall-clock time in the validation container: 31.85 s.
+The time is hardware-dependent and is not a performance guarantee.

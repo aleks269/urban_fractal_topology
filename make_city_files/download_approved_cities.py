@@ -1,38 +1,12 @@
 from __future__ import annotations
-import ssl
-import requests
-import urllib3
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# Рабочий NoVerifyAdapter без ошибок с SSLContext
-class NoVerifyAdapter(requests.adapters.HTTPAdapter):
-    def init_poolmanager(self, *args, **kwargs):
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        kwargs['ssl_context'] = ctx
-        return super().init_poolmanager(*args, **kwargs)
-
-    def proxy_manager_for(self, *args, **kwargs):
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        kwargs['ssl_context'] = ctx
-        return super().proxy_manager_for(*args, **kwargs)
-
-requests.Session().mount('https://', NoVerifyAdapter())
-
-# Теперь можно импортировать osmnx
-import osmnx as ox
-
 
 import argparse
 import json
+import os
 import re
 import time
 import traceback
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
 
@@ -45,7 +19,10 @@ import osmnx as ox
 
 ox.settings.use_cache = True
 ox.settings.log_console = True
-ox.settings.timeout = 300
+ox.settings.requests_timeout = 300
+if os.environ.get("URBAN_FRACTAL_SSL_NO_VERIFY") == "1":
+    print("WARNING: TLS certificate verification is disabled by URBAN_FRACTAL_SSL_NO_VERIFY=1")
+    ox.settings.requests_kwargs = {**ox.settings.requests_kwargs, "verify": False}
 
 OVERPASS_ENDPOINTS = [
     "https://overpass-api.de/api",
@@ -344,7 +321,7 @@ def download_boundary(city: City, out_dir: Path, overwrite: bool) -> gpd.GeoData
         return gpd.read_file(path)
 
     print("  Downloading boundary:", city.query)
-    boundary = ox.geocode_to_gdf(city.query)
+    boundary = ox.geocoder.geocode_to_gdf(city.query)
     boundary = boundary[boundary.geometry.notna()].copy()
     boundary = boundary.to_crs(4326)
 
@@ -366,7 +343,7 @@ def download_buildings(boundary: gpd.GeoDataFrame, out_dir: Path, overwrite: boo
     poly = boundary.to_crs(4326).geometry.iloc[0]
 
     def _run():
-        return ox.features_from_polygon(poly, tags={"building": True})
+        return ox.features.features_from_polygon(poly, tags={"building": True})
 
     buildings = retry_with_endpoints(_run, "buildings")
     buildings = buildings[buildings.geometry.type.isin(["Polygon", "MultiPolygon"])].copy()
@@ -401,8 +378,8 @@ def download_roads(boundary: gpd.GeoDataFrame, out_dir: Path, overwrite: bool) -
     poly = boundary.to_crs(4326).geometry.iloc[0]
 
     def _run():
-        graph = ox.graph_from_polygon(poly, network_type="drive", simplify=True)
-        _, edges = ox.graph_to_gdfs(graph)
+        graph = ox.graph.graph_from_polygon(poly, network_type="drive", simplify=True)
+        _, edges = ox.convert.graph_to_gdfs(graph)
         return edges.reset_index()
 
     roads = retry_with_endpoints(_run, "roads")
@@ -445,6 +422,15 @@ def write_manifest(city: City, out_dir: Path, status: str, error: str | None = N
 def process_city(city: City, root: Path, roads: bool, overwrite: bool, sleep_s: float) -> None:
     out_dir = root / city.subset / city.slug
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    boundary_path = out_dir / "boundary.geojson"
+    buildings_path = out_dir / "buildings.geojson"
+    roads_path = out_dir / "roads.geojson"
+    complete = boundary_path.exists() and buildings_path.exists() and (not roads or roads_path.exists())
+    if complete and not overwrite:
+        print(f"SKIP complete: {city.subset}/{city.slug}")
+        write_manifest(city, out_dir, status="ok")
+        return
 
     print("\n" + "=" * 72)
     print(f"{city.subset.upper()} | {city.name} | {city.query}")

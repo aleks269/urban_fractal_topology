@@ -1,375 +1,157 @@
-# UrbanFractal Topology
+# UrbanFractal Topology 0.4.0
 
-**UrbanFractal Topology** is a research-oriented Python pipeline for finite-scale analysis of urban morphology from building footprints. It combines fractal, lacunarity, compactness, approximate 2.5D envelope, and multiscale topological descriptors in a reproducible command-line workflow.
+`urban-fractal` is a boundary-aware pipeline for finite-scale analysis of urban building-footprint masks. It computes geometric, fractal, lacunarity, digital-topology, multifractal, approximate 2.5D and two-phase transport descriptors.
 
-Current version: **0.3.0**  
-Status: **research prototype**
+This version does not treat the bounding rectangle as part of the city. Every raster metric is restricted to the rasterized analysis boundary.
 
-The central methodological principle is explicit scale control: all scaling quantities are treated as finite-resolution estimates, and the software reports the scale interval used instead of extrapolating urban structure below the resolution of the source data.
+## Main calculations
 
-## Main capabilities
+### 2D morphology
 
-The pipeline currently computes:
+- building fraction inside the analysis domain;
+- boundary area, perimeter and boundary compactness;
+- multi-origin box-counting estimate `D_build` on a fixed physical scale interval;
+- grid-origin and leave-one-scale-out stability diagnostics;
+- domain-aware gliding-box lacunarity;
+- multifractal spectrum `D_q` with zero padding and per-scale probability normalization.
 
-- finite-scale 2D box-counting dimension of building footprints, `D_build`;
-- gliding-box lacunarity, `Lambda(r)`;
-- 2D compactness of the selected urban boundary, `C_2D`;
-- approximate 2.5D building-envelope characteristics:
-  - roof area;
-  - wall area;
-  - envelope area;
-  - building volume;
-  - surface amplification, `A_env / A_0`;
-  - 3D compactness, `C_3D`;
-- optional multifractal spectrum, `D_q`, for the building-footprint mass field;
-- multiscale morphology and topology under disk dilation, `X_r = X ⊕ B_r`:
-  - area profile, `A(r)`;
-  - lattice perimeter profile, `P(r)`;
-  - connected-component profile, `beta0(r)`;
-  - hole profile, `beta1(r)`;
-  - Euler characteristic, `chi(r) = beta0(r) - beta1(r)`;
-  - largest-component fraction, `G(r)`;
-  - critical connectivity radius, `r_c`;
-  - integral archipelago, void, and boundary-complexity indices;
-- resolution-sweep diagnostics for identifying grid-sensitive results;
-- batch download and analysis workflows for catalogs of 100 and 200 cities.
+### Digital topology
 
-## Scientific scope
+The foreground and background use a dual 4/8-connectivity convention. Holes are defined relative to the irregular analysis domain.
 
-The current implementation analyzes a **2D rasterized mask of building footprints** and an approximate **2.5D extruded building envelope**. The topological block tracks Betti numbers during morphological dilation. It is not yet a full persistent-homology analysis of a 3D point cloud, LiDAR surface, voxel model, or polygonal mesh.
+The topology profile under dilation reports:
 
-The software is intended for exploratory research, comparative urban morphology, method development, and reproducible computational experiments. It should not be treated as a validated universal classifier of cities.
+- `beta0(r)`, `beta1(r)` and `chi(r)`;
+- Crofton perimeter and occupied area;
+- largest-component fraction;
+- directional left-right and top-bottom spanning indicators;
+- `giant_component_radius_m`;
+- `spanning_radius_lr_m` and `spanning_radius_tb_m`.
 
-## Requirements
+The giant-component radius is not called a percolation radius. True finite-domain percolation is represented by boundary-spanning connectivity.
 
-- Python 3.10 or newer;
-- NumPy;
-- pandas;
-- GeoPandas;
-- Shapely;
-- pyproj;
-- rasterio;
-- Matplotlib;
-- SciPy;
-- optional: OSMnx for direct OpenStreetMap download;
-- optional: pytest and Ruff for development.
+### Approximate 2.5D geometry
+
+Building footprints are extruded by height layers. Polygon unions are used so overlapping footprints and shared internal walls are not counted as external envelope.
+
+Separate quantities are reported for:
+
+- roof area;
+- exposed wall area;
+- open thermal envelope `roof + exposed walls`;
+- ground-contact area;
+- closed geometric surface;
+- volume;
+- thermal surface-to-volume ratio;
+- closed-surface isoperimetric compactness.
+
+Unknown heights use the configured default only as a model assumption. The output records height completeness by feature count and by footprint area and writes sensitivity scenarios to `height_sensitivity_2_5d.csv`.
+
+### Two-phase stationary transport
+
+With `--transport`, the program solves
+
+```text
+div(k grad u) = 0
+```
+
+on the irregular raster domain using harmonic interface conductivities. It evaluates both phase interpretations:
+
+- open space as the conducting phase;
+- buildings as the conducting phase.
+
+For left-right and top-bottom excitation it reports conductance, resistance, fixed-potential dissipation, fixed-unit-flux dissipation, relative conductance, anisotropy and the energy-identity error. If a large domain is explicitly coarsened, the actual transport pixel size and coarsening factor are recorded.
 
 ## Installation
 
-Clone the repository and create a virtual environment:
+Python 3.11 or newer is required.
 
 ```bash
-git clone https://github.com/aleks269/urban_fractal_topology.git
-cd urban_fractal_topology
-
+cd urban_fractal_topology_25m_v040
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e .
-```
-
-Install direct OpenStreetMap download support:
-
-```bash
-python -m pip install -e '.[osm]'
-```
-
-Install development dependencies and run the tests:
-
-```bash
 python -m pip install -e '.[osm,dev]'
 python -m pytest -q
 ```
 
-## Quick start with local vector data
+## Single-city run
 
 ```bash
-urban-fractal \
+python -m urban_fractal.cli \
   --buildings data/zelenograd/buildings.geojson \
   --boundary data/zelenograd/boundary.geojson \
-  --out results/zelenograd \
+  --out results/zelenograd_25m \
   --pixel 25 \
-  --default-height 15 \
+  --min-scaling-points 6 \
+  --scaling-min-m 50 \
+  --scaling-max-m 3200 \
   --topology \
-  --multifractal
+  --multifractal \
+  --transport
 ```
 
-Supported vector formats include GeoJSON, GeoPackage, and Shapefile. The building layer should contain polygonal footprints.
+Pixel-centre rasterization (`all_touched=False`) is the default. The legacy `--all-touched` option remains available only for sensitivity tests.
 
-The program attempts to obtain building height from one of the following fields:
-
-```text
-height
-building:height
-building:levels
-levels
-floors
-этажность
-```
-
-If no usable height attribute is present, `--default-height` is used. When only the number of floors is available, height is estimated with `--floor-height`.
-
-## Direct OpenStreetMap download
-
-```bash
-urban-fractal \
-  --city "Saint Petersburg, Russia" \
-  --out results/saint_petersburg_osm \
-  --pixel 25 \
-  --default-height 15 \
-  --topology
-```
-
-This mode requires the optional `osm` dependencies and internet access. Large-city downloads through Nominatim and Overpass may fail because of geocoding ambiguity, timeouts, rate limits, or incomplete source data. For systematic studies, locally stored and manually verified extracts are preferable.
-
-## Resolution sweep
-
-Resolution-sweep mode repeats the same analysis at several raster pixel sizes:
-
-```bash
-urban-fractal \
-  --buildings data/zelenograd/buildings.geojson \
-  --boundary data/zelenograd/boundary.geojson \
-  --out results/zelenograd_resolution_sweep \
-  --resolution-sweep 5 10 20 50 100 \
-  --topology
-```
-
-The root output directory contains:
-
-```text
-results/zelenograd_resolution_sweep/
-├── px_5m/
-├── px_10m/
-├── px_20m/
-├── px_50m/
-├── px_100m/
-├── resolution_sweep_summary.csv
-├── resolution_sweep_summary.json
-└── resolution_sweep_stability.png
-```
-
-Each `px_*m` subdirectory is a complete single-resolution run. The summary compares raster size, foreground fraction, raster/vector area mismatch, `D_build`, fit quality, lacunarity, and topological descriptors.
-
-Quality thresholds can be adjusted:
-
-```bash
-urban-fractal \
-  --buildings data/zelenograd/buildings.geojson \
-  --boundary data/zelenograd/boundary.geojson \
-  --out results/zelenograd_resolution_sweep \
-  --resolution-sweep 5 10 20 50 100 \
-  --topology \
-  --sweep-max-area-error 0.05 \
-  --sweep-min-r2 0.98 \
-  --sweep-d-cv-threshold 0.05 \
-  --sweep-rc-cv-threshold 0.10
-```
-
-The reported stable resolution interval is a diagnostic heuristic for rejecting obviously grid-dependent results. It is not proof of mathematical scale invariance.
-
-## Topological analysis options
-
-Automatic dilation radii:
-
-```bash
-urban-fractal \
-  --buildings buildings.geojson \
-  --boundary boundary.geojson \
-  --out results/city_topology \
-  --pixel 25 \
-  --topology \
-  --topology-max-radius-fraction 0.05 \
-  --topology-n-radii 18
-```
-
-Manual radii in raster pixels:
-
-```bash
-urban-fractal \
-  --buildings buildings.geojson \
-  --boundary boundary.geojson \
-  --out results/city_topology \
-  --pixel 25 \
-  --topology \
-  --topology-radii 0,1,2,4,8,16,32,64
-```
-
-Connectivity conventions:
-
-```text
---topology-connectivity 1    4-neighbour foreground connectivity
---topology-connectivity 2    8-neighbour foreground connectivity
-```
-
-The critical radius `r_c` is defined by the first dilation radius at which the largest connected component reaches the selected fraction of the built-up mask:
-
-```bash
---giant-threshold 0.5
-```
-
-## Interpretation of topological descriptors
-
-`beta0(r)` is the number of connected built-up components after dilation by radius `r`. Large values indicate fragmented or archipelago-like urban fabric.
-
-`beta1(r)` is the number of holes in the dilated built-up mask. Peaks may correspond to characteristic scales of courtyards, parks, industrial voids, railway corridors, water barriers, or superblocks. Interpretation requires comparison with the source geometry.
-
-`chi(r) = beta0(r) - beta1(r)` distinguishes component-dominated and hole-dominated scale ranges.
-
-`G(r)` is the fraction of built pixels belonging to the largest connected component.
-
-`r_c` is a finite-scale connectivity proxy. It depends on raster resolution, the selected boundary, connectivity convention, and the definition of the giant-component threshold.
-
-## Output files
-
-A normal run may produce:
+## Main output files
 
 ```text
 summary.json
-box_counts_buildings.csv
-scaling_window_candidates.csv
-lacunarity_buildings.csv
+analysis_masks.npz
+analysis_domain_mask.png
 building_mask.png
+box_counts_buildings.csv
+scaling_window_candidates_diagnostic.csv
 box_count_buildings.png
+lacunarity_buildings.csv
 lacunarity_buildings.png
-multifractal_spectrum_buildings.csv
-```
-
-With `--topology` enabled, additional files include:
-
-```text
 topology_minkowski_betti_profile.csv
 minkowski_profile.png
 betti_profile.png
 percolation_profile.png
+multifractal_spectrum_buildings.csv
+multifractal_raw_buildings.csv
+height_sensitivity_2_5d.csv
+transport_results.csv
+transport_potential_*.png
 ```
 
-`summary.json` is the machine-readable city passport and should be treated as the primary output for downstream aggregation.
-
-## Batch analysis of 100 or 200 cities
-
-List the available 200-city catalog:
+## Batch run for 200 cities at 25 m
 
 ```bash
-python batch_tools/download_city_catalog.py \
-  --catalog configs/city_catalog_200.csv \
-  --list
+chmod +x scripts/run_all_200_25m_external.sh
+bash scripts/run_all_200_25m_external.sh /Volumes/aglikflash
 ```
 
-Download a small pilot subset:
+The script:
 
-```bash
-python batch_tools/download_city_catalog.py \
-  --catalog configs/city_catalog_200.csv \
-  --out data/approved_cities \
-  --cities pskov,zelenograd,venice,singapore,cape_town \
-  --sleep 5
-```
+1. creates or reuses `~/.venvs/urban-fractal-25m`;
+2. runs the complete test suite;
+3. downloads the 200-city catalog;
+4. runs boundary-aware `final` analysis at 25 m;
+5. rebuilds per-city and global reports;
+6. runs the quality audit;
+7. runs quality-aware statistical post-processing.
 
-Run a coarse pilot analysis:
+Existing results are skipped only when their `software.version` matches the current version. Results from older methodologies are recalculated.
 
-```bash
-python batch_tools/run_city_batch.py \
-  --catalog configs/city_catalog_200.csv \
-  --data-root data/approved_cities \
-  --results-root results/batch_200 \
-  --mode quick \
-  --pixel 50 \
-  --cities pskov,zelenograd,venice,singapore,cape_town \
-  --continue-on-error \
-  --skip-existing
-```
-
-Prepared shell scripts are available for full-catalog workflows:
-
-```bash
-bash scripts/download_200_cities.sh
-bash scripts/run_200_quick.sh
-bash scripts/run_200_sweep.sh
-bash scripts/run_200_final_50m.sh
-```
-
-Do not start with the heaviest calculation on all 200 cities. First verify installation and data quality on a small subset, then run the coarse single-resolution mode, inspect failures, and only then start topological and resolution-sweep calculations.
-
-Detailed instructions:
-
-- [`docs/BATCH_100_CITIES.md`](docs/BATCH_100_CITIES.md)
-- [`docs/CITY_CATALOG_200.md`](docs/CITY_CATALOG_200.md)
-- [`urban_fractal_docs/QUICKSTART.md`](urban_fractal_docs/QUICKSTART.md)
-- [`urban_fractal_docs/MANUAL.md`](urban_fractal_docs/MANUAL.md)
-
-## Repository structure
+The main outputs are:
 
 ```text
-urban_fractal/          core Python package
-batch_tools/            city download, batch execution, and aggregation tools
-report_tools/           report-generation utilities
-configs/                100-city and 200-city catalogs
-scripts/                prepared shell workflows
-examples/               example launch scripts
-tests/                  automated tests
-docs/                   batch-processing documentation
-urban_fractal_docs/     detailed user documentation
-data/zelenograd/         small example dataset
+/Volumes/aglikflash/urban_fractal_200_25m/results/all_results_index.html
+/Volumes/aglikflash/urban_fractal_200_25m/results/analysis_25m/auto_analysis_report.html
+/Volumes/aglikflash/urban_fractal_200_25m/audit/audit_final_25m.csv
 ```
 
-Downloaded city datasets, generated results, virtual environments, caches, and temporary files are excluded by `.gitignore`.
+## Quality interpretation
 
-## Methodological limitations
+A completed run is not automatically a scientifically admissible city. The audit checks method version, boundary availability, raster area agreement, box-counting fit and stability, directional spanning fields, transport presence and the energy identity.
 
-1. `D_build` is a finite-scale 2D box-counting estimate for a rasterized footprint mask, not a universal fractal dimension of a city.
-2. The selected scaling interval affects the fitted dimension and is therefore reported explicitly.
-3. The approximate 2.5D model uses extruded footprints rather than detailed roofs or façade meshes:
+The program cannot infer independent OSM completeness from OSM alone. It records this limitation explicitly. The 2.5D block remains model-dependent when height tags are incomplete. Water, vegetation, roads and independent thermal or energy observations are not created from building-boundary input and must be supplied separately for empirical urban-dissipation studies.
 
-   ```text
-   roof_area = footprint_area * roof_factor
-   wall_area = footprint_perimeter * height
-   envelope_area = roof_area + wall_area
-   ```
+See `CORRECTIONS_V040.md` for the implemented corrections and validation results.
 
-4. Building-height completeness strongly affects 2.5D outputs.
-5. Topological descriptors depend on raster resolution, boundary selection, foreground/background connectivity, and dilation radii.
-6. Administrative boundaries and OSM completeness differ between cities and can dominate cross-city comparisons.
-7. Catalog morphotype labels are working metadata for grouping, not classifications inferred by the algorithm.
+## Slurm cluster execution
 
-## Tests
-
-Run the automated test suite from the repository root:
-
-```bash
-python -m pytest -q
-```
-
-The current tests cover:
-
-- box-counting dimension of a filled square;
-- lacunarity of a uniform mask;
-- 2D and 3D compactness functions;
-- synthetic end-to-end pipeline execution;
-- synthetic resolution sweep;
-- Betti numbers of simple components and rings;
-- component merging under morphological dilation.
-
-## License and data attribution
-
-The source code is released under the [MIT License](LICENSE).
-
-The MIT License applies to the software code and original documentation in this repository. It does not replace licenses attached to third-party datasets or dependencies.
-
-OpenStreetMap-derived data are provided by **© OpenStreetMap contributors** and are subject to the **Open Database License (ODbL)**. Users are responsible for preserving the required attribution and for checking the licensing terms of any other input datasets.
-
-## Citation
-
-Until a versioned release and DOI are published, cite the repository and the exact software version used. A temporary software citation is:
-
-```text
-Aglikov, A. (2026). UrbanFractal Topology (Version 0.3.0) [Computer software].
-GitHub repository: https://github.com/aleks269/urban_fractal_topology
-```
-
-For archival citation, a future tagged GitHub release can be deposited in Zenodo to obtain a version-specific DOI.
-
-## Author
-
-**Aleksandr Aglikov**  
-GitHub: [`@aleks269`](https://github.com/aleks269)
+Prepared Slurm array, environment, finalization and Moscow-only scripts are in
+`slurm/`. See `slurm/README_SLURM.md`.
