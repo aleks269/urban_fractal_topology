@@ -1,13 +1,7 @@
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-__MACOSX/
-
-# Python bytecode and caches
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
+*.pyo
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
@@ -19,28 +13,22 @@ htmlcov/
 venv/
 env/
 
-# Build and package artifacts
+# Build/package artifacts
 build/
 dist/
 *.egg-info/
 
-# IDE and notebook state
+# macOS/editors
+.DS_Store
+__MACOSX/
 .vscode/
 .idea/
-.ipynb_checkpoints/
-
-# Generated calculations and reports
-results/
-reports/
-report_output*/
-slurm-*.out
-slurm-*.err
-
-# Downloaded city datasets (keep small curated examples only)
-data/approved_cities/
-
-# Temporary and backup files
-*.tmp
-*.temp
-*.bak
 *~
+*.bak
+
+# Runtime outputs and downloaded datasets
+results/
+validation-output/
+data/approved_cities/
+slurm-*.out
+logs/
