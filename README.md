@@ -1,4 +1,4 @@
-# UrbanFractal Topology 0.4.1
+# UrbanFractal Topology 0.4.2
 
 `urban-fractal` is a boundary-aware research pipeline for finite-scale analysis of urban building morphology. It combines raster geometry, box-counting, lacunarity, digital topology under Minkowski dilation, two explicitly separated multifractal measures, approximate 2.5D building geometry and stationary two-phase transport.
 
@@ -24,7 +24,7 @@ The exact definitions, equations, normalization rules and admissibility conditio
 
 For each dilation radius the program computes occupied area, Crofton perimeter, `beta0`, `beta1`, Euler characteristic, largest-component fraction and directional spanning.
 
-Version 0.4.1 reports both:
+Version 0.4.2 reports both:
 
 - full-domain bounding-box spanning;
 - largest-domain-component spanning for administrative domains with detached exclaves.
@@ -72,7 +72,7 @@ python -m pytest -q
 Validated suite:
 
 ```text
-31 passed
+35 passed
 ```
 
 ## Single-city run
