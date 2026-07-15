@@ -2,6 +2,32 @@
 
 All notable public changes are recorded here.
 
+## [0.4.2] — 2026-07-15
+
+Patch release for safe and reproducible OSM city downloads.
+
+### Added
+
+- Boundary-only validation mode before Overpass downloads.
+- Exact OSM relation/way overrides for ambiguous city names.
+- Boundary area and bounding-box diagonal validation.
+- Per-city boundary-resolution reports and failed-city lists.
+- Explicit cache, timeout, retry and fail-fast controls.
+- Regression tests for non-polygonal Nominatim results and oversized boundaries.
+
+### Changed
+
+- `configs/city_catalog_200.csv` is the single city catalog used by the downloader.
+- GeoJSON output is written atomically.
+- Existing city outputs are trusted only after boundary validation.
+- The downloader releases large GeoDataFrames after each city.
+
+### Fixed
+
+- A non-polygonal first Nominatim result no longer prevents ranked-result fallback.
+- Failed cities now produce a non-zero command exit status.
+- One failed city no longer appears as a successful catalog download.
+
 ## [0.4.1] — 2026-07-14
 
 Reviewed release candidate for the 25 m urban atlas workflow.
