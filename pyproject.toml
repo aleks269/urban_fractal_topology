@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "urban-fractal"
-version = "0.4.2"
+version = "0.4.3"
 description = "Boundary-aware fractal, lacunarity, topology, 2.5D envelope and transport analysis for urban morphology"
 readme = "README.md"
 requires-python = ">=3.11"

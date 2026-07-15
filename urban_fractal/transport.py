@@ -186,7 +186,16 @@ def _solve(A: sp.csr_matrix, b: np.ndarray) -> tuple[np.ndarray, str, bool, int 
     if n <= 80_000:
         return spla.spsolve(A, b), "spsolve", True, None
     diag = A.diagonal()
-    M = spla.LinearOperator(A.shape, matvec=lambda x: np.divide(x, diag, out=np.zeros_like(x), where=diag != 0))
+    M = spla.LinearOperator(
+        A.shape,
+        matvec=lambda x: np.divide(
+            np.asarray(x, dtype=np.float64),
+            diag,
+            out=np.zeros_like(x, dtype=np.float64),
+            where=diag != 0,
+        ),
+        dtype=np.float64,
+    )
     counter = {"n": 0}
 
     def callback(_):

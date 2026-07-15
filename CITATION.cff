@@ -5,8 +5,8 @@ type: software
 authors:
   - family-names: "Aglikov"
     given-names: "Aleksandr"
-version: "0.4.1"
-date-released: "2026-07-14"
+version: "0.4.3"
+date-released: "2026-07-15"
 repository-code: "https://github.com/aleks269/urban_fractal_topology"
 url: "https://github.com/aleks269/urban_fractal_topology"
 license: MIT

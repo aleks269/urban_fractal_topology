@@ -20,6 +20,13 @@ import pandas as pd
 ox.settings.use_cache = True
 ox.settings.log_console = True
 ox.settings.requests_timeout = 300
+ox.settings.http_user_agent = (
+    "urban-fractal-topology/0.4.3 "
+    "(https://github.com/aleks269/urban_fractal_topology)"
+)
+ox.settings.http_referer = (
+    "https://github.com/aleks269/urban_fractal_topology"
+)
 
 if os.environ.get("URBAN_FRACTAL_SSL_NO_VERIFY") == "1":
     print(
@@ -31,11 +38,12 @@ if os.environ.get("URBAN_FRACTAL_SSL_NO_VERIFY") == "1":
         "verify": False,
     }
 
+# Base endpoint and whether OSMnx should poll its /status endpoint.
+# VK Maps and Private.coffee publicly operate without rate limiting.
 OVERPASS_ENDPOINTS = (
-    "https://overpass-api.de/api",
-    "https://overpass.kumi.systems/api",
-    "https://overpass.openstreetmap.ru/api",
-    "https://overpass.osm.ch/api",
+    ("https://maps.mail.ru/osm/tools/overpass/api", False),
+    ("https://overpass.private.coffee/api", False),
+    ("https://overpass-api.de/api", True),
 )
 
 DEFAULT_MAX_BOUNDARY_AREA_KM2 = float(
@@ -529,8 +537,10 @@ def retry_with_endpoints(
     attempts = attempts_per_endpoint or ATTEMPTS_PER_ENDPOINT
     last_error: Exception | None = None
 
-    for endpoint in OVERPASS_ENDPOINTS:
+    for endpoint, use_rate_limit in OVERPASS_ENDPOINTS:
         ox.settings.overpass_url = endpoint
+        ox.settings.overpass_rate_limit = use_rate_limit
+
         for attempt in range(1, attempts + 1):
             try:
                 print(
