@@ -22,6 +22,6 @@ jobs:
       - name: Install package
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e '.[osm,dev]'
+          python -m pip install -e '.[osm,atlas,dev]'
       - name: Run tests
         run: python -m pytest -q
