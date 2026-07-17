@@ -1,1 +1,57 @@
-{}
+{
+  "athens": {
+    "osm_id": "R1370736",
+    "max_area_km2": 100,
+    "max_diagonal_km": 30
+  },
+  "istanbul": {
+    "osm_id": "R223474",
+    "max_area_km2": 14000,
+    "max_diagonal_km": 250
+  },
+  "tokyo": {
+    "osm_id": "R1543125",
+    "max_area_km2": 50000,
+    "max_diagonal_km": 3000
+  },
+  "beijing": {
+    "osm_id": "R912940",
+    "max_area_km2": 20000,
+    "max_diagonal_km": 350
+  },
+  "shanghai": {
+    "osm_id": "R913067",
+    "max_area_km2": 20000,
+    "max_diagonal_km": 700
+  },
+  "ho_chi_minh_city": {
+    "osm_id": "R1973756",
+    "max_area_km2": 45000,
+    "max_diagonal_km": 600
+  },
+  "riyadh": {
+    "osm_id": "R12423679",
+    "max_area_km2": 10000,
+    "max_diagonal_km": 250
+  },
+  "jeddah": {
+    "osm_id": "R12429519",
+    "max_area_km2": 5000,
+    "max_diagonal_km": 250
+  },
+  "johannesburg": {
+    "osm_id": "R594508",
+    "max_area_km2": 3000,
+    "max_diagonal_km": 150
+  },
+  "cape_town": {
+    "osm_id": "R79604",
+    "max_area_km2": 5000,
+    "max_diagonal_km": 2500
+  },
+  "lahore": {
+    "osm_id": "R16117666",
+    "max_area_km2": 3000,
+    "max_diagonal_km": 150
+  }
+}
