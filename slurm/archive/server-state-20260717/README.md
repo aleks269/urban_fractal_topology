@@ -2,15 +2,19 @@
 
 These scripts preserve the audited server state captured on 2026-07-17.
 
-They are retained for provenance only and are not current v0.4.4
-production scripts.
+They are retained for provenance and reproducibility only. They are not
+current v0.4.4 production scripts and must not be submitted directly.
 
 Known limitations:
 
 - hard-coded v0.4.2 repository and run paths;
-- server-specific absolute paths;
-- hard-link snapshots created with `cp -al`;
-- historical directory-layout assumptions;
-- incorrect use of the complete 200-city catalog in the Russia-100
-  atlas script;
-- no v0.4.4 run manifest, stage timing, checkpoints, or resume support.
+- server-specific absolute filesystem paths;
+- hard-link snapshot creation with `cp -al`;
+- assumptions about historical run-directory layouts;
+- the Russia-100 atlas script passes the complete 200-city catalog
+  instead of the generated Russia-only catalog;
+- no v0.4.4 stage timing, checkpoints, resume support, or complete run
+  manifest.
+
+Replacement production scripts will be created after the v0.4.4
+execution and manifest formats are stabilized.
